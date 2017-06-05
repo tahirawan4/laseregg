@@ -7,7 +7,7 @@ import dateutil.parser
 from datetime import datetime as dt
 from django.shortcuts import render_to_response
 from sensor import constant
-import MySQLdb
+import PyMySQL
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.conf import settings
@@ -89,7 +89,7 @@ def procces_values(request, id):
 
 
 def test(mac_id):
-    conn = MySQLdb.connect(
+    conn = PyMySQL.connect(
         host=settings.DATA_BASE_HOST,
         user=settings.DATA_BASE_USER,
         passwd=settings.DATA_BASE_PASSWORD,
@@ -121,7 +121,7 @@ def fetchmac(request):
 
         to_return['options'] = time_ids_list
     except Exception as e:
-        print e
+        pass
 
     return HttpResponse(json.dumps(to_return), content_type="application/json")
 
@@ -140,6 +140,6 @@ def get_latest_reading(request):
 
             to_return['data'] = data
         except Exception as e:
-            print e
+            pass
 
     return HttpResponse(json.dumps(to_return), content_type="application/json")
