@@ -7,7 +7,7 @@ import dateutil.parser
 from datetime import datetime as dt
 from django.shortcuts import render_to_response
 from sensor import constant
-import PyMySQL
+import pymysql
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.conf import settings
@@ -89,7 +89,7 @@ def procces_values(request, id):
 
 
 def test(mac_id):
-    conn = PyMySQL.connect(
+    conn = pymysql.connect(
         host=settings.DATA_BASE_HOST,
         user=settings.DATA_BASE_USER,
         passwd=settings.DATA_BASE_PASSWORD,
