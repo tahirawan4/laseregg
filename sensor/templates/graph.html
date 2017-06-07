@@ -5,15 +5,79 @@
 {% block body %}
     <div id="container_chart" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
 
+    <div id="container_chart2" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+
+    <div id="container_chart3" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+
+    <div id="container_chart4" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+
+    <div id="buttonrow">
+	<button id="export-pdf">Export to PDF</button>
+</div>
+
     <script type="text/javascript">
 
         d = new Date();
+
+        /**
+         * Create a global getSVG method that takes an array of charts as an argument. The SVG is returned as an argument in the callback.
+         */
+        Highcharts.getSVG = function (charts, options, callback) {
+            var svgArr = [],
+                top = 0,
+                width = 0,
+                addSVG = function (svgres) {
+                    // Grab width/height from exported chart
+                    var svgWidth = +svgres.match(
+                            /^<svg[^>]*width\s*=\s*\"?(\d+)\"?[^>]*>/
+                        )[1],
+                        svgHeight = +svgres.match(
+                            /^<svg[^>]*height\s*=\s*\"?(\d+)\"?[^>]*>/
+                        )[1],
+                        // Offset the position of this chart in the final SVG
+                        svg = svgres.replace('<svg', '<g transform="translate(0,' + top + ')" ');
+                    svg = svg.replace('</svg>', '</g>');
+                    top += svgHeight;
+                    width = Math.max(width, svgWidth);
+                    svgArr.push(svg);
+                },
+                exportChart = function (i) {
+                    if (i === charts.length) {
+                        return callback('<svg height="' + top + '" width="' + width +
+                          '" version="1.1" xmlns="http://www.w3.org/2000/svg">' + svgArr.join('') + '</svg>');
+                    }
+                    charts[i].getSVGForLocalExport(options, {}, function () {
+                        console.log("Failed to get SVG");
+                    }, function (svg) {
+                        addSVG(svg);
+                        return exportChart(i + 1); // Export next only when this SVG is received
+                    });
+                };
+            exportChart(0);
+        };
+
+        /**
+         * Create a global exportCharts method that takes an array of charts as an argument,
+         * and exporting options as the second argument
+         */
+        Highcharts.exportCharts = function (charts, options) {
+            options = Highcharts.merge(Highcharts.getOptions().exporting, options);
+
+                // Get SVG asynchronously and then download the resulting SVG
+            Highcharts.getSVG(charts, options, function (svg) {
+                Highcharts.downloadSVGLocal(svg, options, function () {
+                    console.log("Failed to export on client side");
+                });
+            });
+        };
+
         Highcharts.setOptions({
             global: {
                 timezoneOffset: d.getTimezoneOffset()
             }
         });
-        Highcharts.chart('container_chart', {
+
+        var chart1= Highcharts.chart('container_chart', {
             chart: {
                 type: 'spline'
             },
@@ -75,7 +139,145 @@
                 menuItemStyle: {
                     fontSize: '10px'
                 }
-            }
+            },
+            exporting: {
+                    enabled: false // hide button
+                }
         });
+
+        var chart2= Highcharts.chart('container_chart2', {
+                        xAxis: {
+                            title: {
+                            text: 'Test 1'
+                                },
+                            min: -0.5,
+                            max: 5.5
+                        },
+                        yAxis: {
+                            title: {
+                            text: 'Ref avg'
+                                },
+                            min: 0
+                        },
+                        title: {
+                            text: 'Ref avg  (Test 1)'
+                        },
+                        series: [{
+                            type: 'line',
+                            name: 'Regression Line',
+                            data: [[0, 1.11], [5, 4.51]],
+                            marker: {
+                                enabled: false
+                            },
+                            states: {
+                                hover: {
+                                    lineWidth: 0
+                                }
+                            },
+                            enableMouseTracking: false
+                        }, {
+                            type: 'scatter',
+                            name: 'Observations',
+                            data: [1, 1.5, 2.8, 3.5, 3.9, 4.2],
+                            marker: {
+                                radius: 4
+                            }
+                        }],
+            exporting: {
+        enabled: false // hide button
+    }
+                    });
+
+        var chart3= Highcharts.chart('container_chart3', {
+                        xAxis: {
+                            title: {
+                            text: 'Test 2'
+                                },
+                            min: -0.5,
+                            max: 5.5
+                        },
+                        yAxis: {
+                            title: {
+                            text: 'Ref avg'
+                                },
+                            min: 0
+                        },
+                        title: {
+                            text: 'Ref avg  (Test 2)'
+                        },
+                        series: [{
+                            type: 'line',
+                            name: 'Regression Line',
+                            data: [[0, 1.11], [5, 4.51]],
+                            marker: {
+                                enabled: false
+                            },
+                            states: {
+                                hover: {
+                                    lineWidth: 0
+                                }
+                            },
+                            enableMouseTracking: false
+                        }, {
+                            type: 'scatter',
+                            name: 'Observations',
+                            data: [1, 1, 2.7, 2.9, 3.9, 4.2],
+                            marker: {
+                                radius: 4
+                            }
+                        }],
+             exporting: {
+        enabled: false // hide button
+    }
+                    });
+
+        var chart4= Highcharts.chart('container_chart4', {
+                        xAxis: {
+                            title: {
+                            text: 'Test 1'
+                                },
+                            min: -0.5,
+                            max: 5.5
+                        },
+                        yAxis: {
+                            title: {
+                            text: 'Test 2'
+                                },
+                            min: 0
+                        },
+                        title: {
+                            text: 'Test2 / Test 1'
+                        },
+                        series: [{
+                            type: 'line',
+                            name: 'Regression Line',
+                            data: [[0, 1.11], [5, 4.51]],
+                            marker: {
+                                enabled: false
+                            },
+                            states: {
+                                hover: {
+                                    lineWidth: 0
+                                }
+                            },
+                            enableMouseTracking: false
+                        }, {
+                            type: 'scatter',
+                            name: 'Observations',
+                            data: [1, 1, 2.7, 2.9, 3.9, 4.2],
+                            marker: {
+                                radius: 4
+                            }
+                        }],
+             exporting: {
+        enabled: false // hide button
+    }
+                    });
+
+    $('#export-pdf').click(function () {
+    Highcharts.exportCharts([chart1, chart2, chart3, chart4], {
+            type: 'application/pdf'
+        });
+    });
     </script>
 {% endblock %}
