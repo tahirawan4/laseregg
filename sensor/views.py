@@ -122,7 +122,7 @@ def fetchmac(request):
         if db_result:
             for i in db_result:
                 time_ids_list.append(
-                    {"value": "%s,%s" % (str(i[20]), str(i[8])), "text": "%s | %s" % (str(i[1]), str(i[8]))})
+                    {"value": "%s,%s" % (str(i[20]), str(i[8])), "text": "%s | %s" % (str(i[1][-4:]), str(i[8]))})
                 to_return['options'] = time_ids_list
             return HttpResponse(json.dumps(to_return), content_type="application/json")
         else:
