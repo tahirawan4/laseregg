@@ -15,7 +15,7 @@
                 <form action="" method='post'>
                     {% csrf_token %}
                     <div class='row'>
-                        <div class='col-sm-8'>
+                        <div class='col-sm-6'>
 
                             ID 1: <input required type="text" id="id1" name="id1" size="20">
                             <button type="button" id="button-1">Refresh</button>
@@ -31,17 +31,35 @@
                             &nbsp;&nbsp;<input type="text" size="4" id="id4_reading" name="id4_reading"> <br>
 
                         </div>
-                        <div class='col-sm-4'>
-                            Test Monitor<br>
-                            {#                            <form id="suggestions">#}
-                            <div id="suggested_ids" onfocusout='hideOptions()'>
+                        <div class='col-sm-2'>
+                            <div id="suggested_ids_1" onfocusout='hideOptions()'>
                                 <input type="text"
-                                       id="insertText"
+                                       id="insertText_1"
                                        autocomplete="off" maxlength="4"
                                 />
 
                             </div>
-                            {#                            </form>#}
+                            <div id="suggested_ids_2" onfocusout='hideOptions()'>
+                                <input type="text"
+                                       id="insertText_2"
+                                       autocomplete="off" maxlength="4"
+                                />
+
+                            </div>
+                            <div id="suggested_ids_3" onfocusout='hideOptions()'>
+                                <input type="text"
+                                       id="insertText_3"
+                                       autocomplete="off" maxlength="4"
+                                />
+
+                            </div>
+                            <div id="suggested_ids_4" onfocusout='hideOptions()'>
+                                <input type="text"
+                                       id="insertText_4"
+                                       autocomplete="off" maxlength="4"
+                                />
+
+                            </div>
                         </div>
 
                     </div>
@@ -87,7 +105,7 @@
                 {#                </div>#}
 
                 <script type="text/javascript">
-                    var main_counter = 0;
+
 
                     $(document).ready(function () {
 
@@ -99,17 +117,17 @@
                             $('.option').hide();
                         }
 
-                        searchAddress = function (text) {
-                            main_counter++;
-                            time_id = '#id' + main_counter;
-                            reading_id = '#id' + main_counter + '_reading';
+                        searchAddress = function (text, indexx) {
+
+                            time_id = '#id' + indexx;
+                            reading_id = '#id' + indexx + '_reading';
                             time_id_reading = text.split(',');
                             $(time_id).val(time_id_reading[0]);
                             $(reading_id).val(time_id_reading[1])
                             $('.option').hide();
-                            $('#suggested_ids').find('option').remove().end();
-                            if (main_counter == 4)
-                                main_counter = 0;
+                            var suggest_id = '#suggested_ids_'+indexx;
+                            $(suggest_id).find('option').remove().end();
+
                         }
                     });
 
@@ -137,35 +155,40 @@
                     });
 
 
-                    $('#insertText').on('keydown', function (e) {
+                    $('#insertText_1,#insertText_2,#insertText_3,#insertText_4').on('keydown', function (e) {
                         if (e.which == 8 || e.which == 46) {
                             $('.option').hide();
-                            $('#suggested_ids').find('option').remove().end();
+                            var tmp = (e.target.id).split('_');
+                            var op_id='#suggested_ids_'+tmp[1];
+                            $(op_id).find('option').remove().end();
+
                         }
                     });
 
-                    $("#insertText").on('input', function () {
+                    $('#insertText_1,#insertText_2,#insertText_3,#insertText_4').on('input', function (e) {
 
-                        if ($('#insertText').val().length == 4) {
+                        if ($('#'+e.target.id).val().length == 4) {
 
                             $.ajax({
 
                                 url: "{% url 'fetchmac' %}",
                                 type: "post",
                                 data: {
-                                    'mac_id': $('#insertText').val(),
+                                    'mac_id': $('#'+e.target.id).val(),
                                     'csrfmiddlewaretoken': '{{csrf_token}}',
                                 },
                                 dataType: "json",
                                 success: function (data) {
-                                    options = data.options;
-
+                                    var options = data.options;
+                                    if(options){
+                                    var tmp = (e.target.id).split('_');
                                     for (index = 0; index < options.length; ++index) {
                                         option = options[index];
-                                        $('#suggested_ids').append($('<option>', {
+                                        var suggest_id = '#suggested_ids_'+tmp[1];
+                                        $(suggest_id).append($('<option>', {
                                             text: option.text,
                                             id: 'option' + (index + 1),
-                                            onmousedown: "searchAddress(option" + (index + 1) + ".value)",
+                                            onmousedown: "searchAddress(option" + (index + 1) + ".value, "+tmp[1]+")",
                                             class: "option",
                                             value: option.value
 
@@ -173,7 +196,10 @@
 
                                     }
                                     showOptions();
+                                    }else{
 
+                                        alert("No Mac address found");
+                                    }
                                 }
                             });
                         }

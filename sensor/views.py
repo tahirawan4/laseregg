@@ -40,7 +40,11 @@ def index(request):
             'start_year': resp2['start_year'],
             'end_day': resp2['end_day'],
             'end_month': resp2['end_month'],
-            'end_year': resp2['end_year']
+            'end_year': resp2['end_year'],
+            'id1'   : id1 ,
+            'id2'   : id2 ,
+            'id3'   : id3 ,
+            'id4'   : id4 ,
 
         })
 
@@ -64,8 +68,8 @@ def procces_values(request, id):
 
     x_axis_list = []
     y_axis_list = []
-    if req.status_code not in [500, 400, 404]:
-        data_ = json.loads(req.content)
+    if req.status_code == 200:
+        data_ = json.loads(req.content.decode('utf-8'))
         obj_datetime = dateutil.parser.parse(data_['data'][0]['ts'])
         # day = obj_datetime.day
         # month = obj_datetime.month
@@ -85,6 +89,7 @@ def procces_values(request, id):
     response_dict['end_day'] = ee.day
     response_dict['end_month'] = ee.month
     response_dict['end_year'] = ee.year
+
     return response_dict
 
 
@@ -94,12 +99,12 @@ def test(mac_id):
         user=settings.DATA_BASE_USER,
         passwd=settings.DATA_BASE_PASSWORD,
         db=settings.DATA_BASE_NAME,
-        port=settings.DATA_BASE_NAME
+        port=settings.DATA_BASE_PORT
     )
     rows = None
     try:
         cursor = conn.cursor()
-        cursor.execute("select * from laseregg where mac like '%" + mac_id + "'")
+        cursor.execute("select * from laseregg where mac like %s "%("'%"+mac_id+"'"))
         rows = cursor.fetchall()
 
     finally:
@@ -118,12 +123,17 @@ def fetchmac(request):
             for i in db_result:
                 time_ids_list.append(
                     {"value": "%s,%s" % (str(i[20]), str(i[8])), "text": "%s | %s" % (str(i[1]), str(i[8]))})
+                to_return['options'] = time_ids_list
+            return HttpResponse(json.dumps(to_return), content_type="application/json")
+        else:
+            to_return['options'] = None
+            return HttpResponse(json.dumps(to_return), content_type="application/json")
 
-        to_return['options'] = time_ids_list
+
     except Exception as e:
         pass
 
-    return HttpResponse(json.dumps(to_return), content_type="application/json")
+
 
 
 @csrf_exempt
@@ -135,7 +145,7 @@ def get_latest_reading(request):
             url = constant.API_LATEST_READING.format(time_id, constant.API_KEY)
             req = requests.get(url)
             reqq = json.loads(req.content)
-            if req.status_code not in [500, 400, 404]:
+            if req.status_code == 200:
                 data = reqq['info.aqi']['data']['pm25']
 
             to_return['data'] = data

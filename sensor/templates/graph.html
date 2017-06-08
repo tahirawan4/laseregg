@@ -106,7 +106,7 @@
             },
             plotOptions: {
                 spline: {
-                    lineWidth: 4,
+                    lineWidth: 1,
                     states: {
                         hover: {
                             lineWidth: 5
@@ -121,17 +121,17 @@
                 }
             },
             series: [{
-                name: 'ID1',
+                name: "{{ id1 }}",
                 data: {{ y_values_1 }}
 
             }, {
-                name: 'ID2',
+                name: "{{ id2 }}",
                 data: {{ y_values_2 }}
             }, {
-                name: 'ID3',
+                name: "{{ id3 }}",
                 data: {{ y_values_3 }}
             }, {
-                name: 'ID4',
+                name: "{{ id4 }}",
                 data: {{ y_values_4 }}
             }
             ],
