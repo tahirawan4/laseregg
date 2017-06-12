@@ -4,7 +4,8 @@ from django.http import HttpResponse
 import json
 import requests
 import dateutil.parser
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta
+
 from django.shortcuts import render_to_response
 from sensor import constant
 import pymysql
@@ -15,36 +16,69 @@ from django.conf import settings
 
 @ensure_csrf_cookie
 def index(request):
+    ids={
+        'id1':None,
+        'id2':None,
+        'id3':None,
+        'id4':None
+    }
     if request.POST:
-        id1 = request.POST.get('id1', '')
-        id2 = request.POST.get('id2', '')
-        id3 = request.POST.get('id3', '')
-        id4 = request.POST.get('id4', '')
+        ids['id1'] = request.POST.get('id1', '')
+        ids['id2'] = request.POST.get('id2', '')
+        ids['id3'] = request.POST.get('id3', '')
+        ids['id4'] = request.POST.get('id4', '')
 
-        resp1 = procces_values(request, id1)
-        resp2 = procces_values(request, id2)
-        resp3 = procces_values(request, id3)
-        resp4 = procces_values(request, id4)
+        start_date = dt.strptime(request.POST['start_date'], constant.date_format)
+        end_date = dt.strptime(request.POST['end_date'], constant.date_format) + timedelta(hours=24)
+        end = end_date.isoformat() + 'Z'
+        begin = start_date.isoformat() + 'Z'
+        ee = dateutil.parser.parse(end)
+        nn = dateutil.parser.parse(begin)
+
+        delta = end_date - start_date
+        if delta.days>10:
+            return HttpResponse(json.dumps({"Error":"Please Select maximum 10 days limit"}), content_type="application/json")
+        days = delta.days * 2
+
+        resp = {
+            'resp1' : {'x_axis_list':[],'y_axis_list':[]},
+            'resp2' : {'x_axis_list':[],'y_axis_list':[]},
+            'resp3' : {'x_axis_list':[],'y_axis_list':[]},
+            'resp4' : {'x_axis_list':[],'y_axis_list':[]}
+        }
+
+        for x in range(4):
+            for i in range(days):
+                start = start_date + timedelta(hours=12*i)
+                end = start_date + timedelta(hours=12*(i+1))
+                date_response = procces_values(request, ids['id'+str(x+1)], start, end)
+                x_list = resp['resp'+str((x+1))]['x_axis_list']
+                y_list = resp['resp'+str((x+1))]['y_axis_list']
+                x_list = x_list + date_response['x_axis_list']
+                y_list = y_list + date_response['y_axis_list']
+                resp['resp'+str((x+1))].update({'x_axis_list':x_list})
+                resp['resp'+str((x+1))].update({'y_axis_list':y_list})
+
 
         return render_to_response('graph.html', {
-            'x_values_1': resp1.get('x_axis_list',[]),
-            'y_values_1': resp1.get('y_axis_list',[]),
-            'x_values_2': resp2.get('x_axis_list',[]),
-            'y_values_2': resp2.get('y_axis_list',[]),
-            'x_values_3': resp3.get('x_axis_list',[]),
-            'y_values_3': resp3.get('y_axis_list',[]),
-            'x_values_4': resp4.get('x_axis_list',[]),
-            'y_values_4': resp4.get('y_axis_list',[]),
-            'start_day': resp2['start_day'],
-            'start_month': resp2['start_month'],
-            'start_year': resp2['start_year'],
-            'end_day': resp2['end_day'],
-            'end_month': resp2['end_month'],
-            'end_year': resp2['end_year'],
-            'id1'   : id1 ,
-            'id2'   : id2 ,
-            'id3'   : id3 ,
-            'id4'   : id4 ,
+            'x_values_1': resp['resp1'].get('x_axis_list',[]),
+            'y_values_1': resp['resp1'].get('y_axis_list',[]),
+            'x_values_2': resp['resp2'].get('x_axis_list',[]),
+            'y_values_2': resp['resp2'].get('y_axis_list',[]),
+            'x_values_3': resp['resp3'].get('x_axis_list',[]),
+            'y_values_3': resp['resp3'].get('y_axis_list',[]),
+            'x_values_4': resp['resp4'].get('x_axis_list',[]),
+            'y_values_4': resp['resp4'].get('y_axis_list',[]),
+            'start_day': nn.day,
+            'start_month': nn.month-1,
+            'start_year': nn.year,
+            'end_day': ee.day,
+            'end_month': ee.month,
+            'end_year': ee.year,
+            'id1'   : ids['id1'] ,
+            'id2'   : ids['id2'] ,
+            'id3'   : ids['id3'] ,
+            'id4'   : ids['id4'] ,
 
         })
 
@@ -55,13 +89,13 @@ def index(request):
         })
 
 
-def procces_values(request, id):
+def procces_values(request, id, start_date, end_date):
     response_dict = {}
-    start_date = dt.strptime(request.POST['start_date'], constant.date_format)
-    end_date = dt.strptime(request.POST['end_date'], constant.date_format)
+
     end = end_date.isoformat() + 'Z'
     begin = start_date.isoformat() + 'Z'
-    url = constant.API_URL.format(id, constant.API_KEY, constant.series, constant.utc_offset, begin, end)
+
+    url = constant.API_URL.format(id, constant.API_KEY, constant.series, constant.utc_offset, begin,end)
     req = requests.get(url)
     ee = dateutil.parser.parse(end)
     nn = dateutil.parser.parse(begin)
@@ -71,9 +105,6 @@ def procces_values(request, id):
     if req.status_code == 200:
         data_ = json.loads(req.content.decode('utf-8'))
         obj_datetime = dateutil.parser.parse(data_['data'][0]['ts'])
-        # day = obj_datetime.day
-        # month = obj_datetime.month
-        # year = obj_datetime.year
         for data in data_['data']:
             obj_datetime = dateutil.parser.parse(data['ts'])
             pm25_value = data['data']['pm25']
@@ -82,13 +113,6 @@ def procces_values(request, id):
 
         response_dict['x_axis_list'] = x_axis_list
         response_dict['y_axis_list'] = y_axis_list
-
-    response_dict['start_day'] = nn.day
-    response_dict['start_month'] = nn.month
-    response_dict['start_year'] = nn.year
-    response_dict['end_day'] = ee.day
-    response_dict['end_month'] = ee.month
-    response_dict['end_year'] = ee.year
 
     return response_dict
 

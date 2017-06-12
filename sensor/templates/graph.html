@@ -89,9 +89,7 @@
             },
             xAxis: {
                 type: 'datetime',
-                labels: {
-                    overflow: 'justify'
-                }
+
             },
             yAxis: {
                 title: {
@@ -109,15 +107,14 @@
                     lineWidth: 1,
                     states: {
                         hover: {
-                            lineWidth: 5
+                            lineWidth: 2
                         }
                     },
                     marker: {
                         enabled: false
                     },
                     pointInterval: 60000, // one hour
-                    pointStart: Date.UTC({{ start_year }}, {{ start_month }}, {{ start_day }}),
-                    pointEnd: Date.UTC({{ end_year }}, {{ end_month }}, {{ end_day }})
+                    pointStart: Date.UTC({{ start_year }}, {{ start_month }}, {{ start_day }})
                 }
             },
             series: [{
